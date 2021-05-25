@@ -6,23 +6,34 @@ import json
 import os
 import re
 import numpy as np
+from tqdm import tqdm
 
 
 class TfIdfVectorizer:
-    def __init__(self, stop_words_path=""):
+    def __init__(self, stop_words_path="", embedding_size=1000):
         self._word_count_dict = {}
         self._total_corpus_size = -1
 
         self._bag_word_vocabulary = {}
-        self._embedding_size = -1
+        self._embedding_size = embedding_size
         if stop_words_path:
             self.load_stop_words(path=stop_words_path)
+        else:
+            self._stop_words = []
+
+        self.vector_storage = []
 
     def load_stop_words(self, path):
         if not os.path.exists(path):
             return
         stop_words = json.load(open(path, 'r'))
         self._stop_words = stop_words
+
+    def load(self, path):
+        pass
+
+    def save(self, path):
+        pass
 
     @staticmethod
     def load_questions(path):
@@ -34,7 +45,7 @@ class TfIdfVectorizer:
             documents.append(sentence_json['question'])
         return documents
 
-    def set_and_sort_word_dict(self, word_count_dict: dict, embedding_size: int = 1000):
+    def set_and_sort_word_dict(self, word_count_dict: dict):
         """
         Sorts given dictionary and set internal word count dictionary
         :param embedding_size:
@@ -50,8 +61,7 @@ class TfIdfVectorizer:
             new_dict[word] = word_count_dict[word]
         self._word_count_dict = new_dict
         self._total_corpus_size = len(new_dict)
-        self._bag_word_vocabulary = self.get_first_n_words(n=embedding_size)
-        self._embedding_size = embedding_size
+        self._bag_word_vocabulary = self.get_first_n_words(n=self._embedding_size)
 
     def get_first_n_words(self, n: int) -> dict:
         """
@@ -74,16 +84,26 @@ class TfIdfVectorizer:
         trimmed_string = re.sub(r'[\d\W]+', ' ', tmp_string)
         return trimmed_string
 
-    def fit(self, documents, embedding_size=1000):
+    def fit(self, documents):
+        """Fit vectorizer with the sequence of documents (questions), after this vectorizer can be used for transforming
+        sentences into vectors.
+        """
         word_count_dict = {}
-        for doc in documents:
+        for doc in tqdm(documents, desc="Fitting vectorizer model"):
             cl_doc = TfIdfVectorizer.trim_string(doc)
             words = list(set(cl_doc.split()))
             for word in words:
                 word_count_dict[word] = word_count_dict.get(word, 0) + 1
-        self.set_and_sort_word_dict(word_count_dict=word_count_dict, embedding_size=embedding_size)
+        self.set_and_sort_word_dict(word_count_dict=word_count_dict)
 
     def tf_idf_info(self, word, document, word_list=None) -> (float, int):
+        """
+        Calculate TF-IDF score for given word and document with already fit-ed corpus.
+        :param word: Any word from document
+        :param document:
+        :param word_list:
+        :return:
+        """
         if not self._bag_word_vocabulary:
             raise ValueError("Model should be initialized.")
 
@@ -106,6 +126,9 @@ class TfIdfVectorizer:
         return tf_idf_score, found_in_corpus
 
     def tf_idf(self, word, document):
+        """
+        Wrapper for simpler usage
+        """
         tf_idf_score, _, _ = self.tf_idf_info(word=word, document=document)
         return tf_idf_score
 
@@ -121,9 +144,9 @@ class TfIdfVectorizer:
                 embedding[word_index] = tf_idf_score
         return embedding
 
-    def transform(self, documents) -> np.ndarray:
+    def transform(self, documents, progressbar=False) -> np.ndarray:
         embeddings = np.zeros(shape=(0, self._embedding_size), dtype=float)
-        for num, document in enumerate(documents):
+        for num, document in tqdm(enumerate(documents), desc="Processing documents into vectors", total=len(documents), disable= not progressbar):
             embedding = self.transform_doc(document=document)
             embeddings = np.vstack([embeddings, embedding])
         return embeddings
@@ -141,15 +164,13 @@ if __name__ == '__main__':
 
     documents = TfIdfVectorizer.load_questions(path=path)
 
-    vectorizer = TfIdfVectorizer(stop_words_path='data/stop_words_english.json')
-    vectorizer.fit(documents=documents, embedding_size=100)
+    vectorizer = TfIdfVectorizer(stop_words_path='data/stop_words_english.json', embedding_size=100)
+    vectorizer.fit(documents=documents)
 
-    vectorizer.save_bag_word_dict(path="bag_of_words.json")
+    vectorizer.save_bag_word_dict(path="data/bag_of_words.json")
     result = vectorizer.transform(documents=test_documents)
     for doc, vec in zip(test_documents, result):
         print(doc)
         print(vec)
         print("-"*50)
-    # tmp_string = 'Some tro 21 ., !@# sa Uysa AS'
-    # trimmed_string = re.sub(r'[\d\W]+', ' ', tmp_string)
-    # print(trimmed_string)
+

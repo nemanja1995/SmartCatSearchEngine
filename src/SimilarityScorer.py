@@ -2,6 +2,7 @@
 Class that can measure similarity between vectors. It uses Cosine similarity.
 """
 import numpy as np
+np.seterr(divide='ignore', invalid='ignore')
 
 
 class SimilarityScorer:
@@ -30,6 +31,7 @@ class SimilarityScorer:
 
         norms = np.multiply(b_corpus_vectors_norm, b_query_vectors_norm)
         cos_similarity = prod / norms
+        cos_similarity = np.nan_to_num(cos_similarity)
         return cos_similarity
 
 
@@ -39,7 +41,7 @@ if __name__ == "__main__":
     bs = [[1, 1, 2], [2, 2, 1], [1, 1, 2]]
     base = np.array(bs)
 
-    print(base[:,0])
+    print(base[:, 0])
     print(base[1, :])
     print("q")
     print(q)
