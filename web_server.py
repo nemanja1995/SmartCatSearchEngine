@@ -1,11 +1,22 @@
 # Python 3 server example
 import json
 import logging
+import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import time
 
+from src.QuestionSearchEngine import QuestionsSearchEngine
+
 hostName = "localhost"
-serverPort = 8080
+serverPort = 8081
+
+qse_data_path = 'cached/qse_data.pkl'
+if os.path.exists(qse_data_path):
+    qse = QuestionsSearchEngine(skip_process=True)
+    qse.load_stored_data(qse_data_path)
+else:
+    documents = QuestionsSearchEngine.load_questions(path="data/questions.jsonl")
+    qse = QuestionsSearchEngine(questions=documents, stop_words_path="data/stop_words_english.json")
 
 
 class MyServer(BaseHTTPRequestHandler):
@@ -35,9 +46,16 @@ class MyServer(BaseHTTPRequestHandler):
         self._set_response()
 
         ## Do some processing
+        questions = data_dict.get('questions', None)
+        results = []
+        if questions and type(questions) is list:
+            for t_question in questions:
+                if type(t_question) is str:
+                    r_query = qse.most_similar(query=t_question, n=5)
+                    results.append({"question": t_question, "similar_questions": r_query})
         ## Reprocess data
 
-        data = json.dumps(data_dict)
+        data = json.dumps(results)
         self.wfile.write(data.encode('utf-8'))
 
 

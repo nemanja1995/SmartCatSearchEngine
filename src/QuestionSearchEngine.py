@@ -1,9 +1,8 @@
 import json
 import logging
 import os
+import pickle
 
-import numpy as np
-from tqdm import tqdm
 
 from src.Document import Document
 from src.SimilarityScorer import SimilarityScorer
@@ -11,7 +10,10 @@ from src.TfIdfVectorizer import TfIdfVectorizer
 
 
 class QuestionsSearchEngine:
-    def __init__(self, questions: list, stop_words_path="", embedding_size=100) -> None:
+    STORED_INFO_FILE = 'info_data'
+    STORED_VECTORS_FILE = 'vectors'
+
+    def __init__(self, questions=None, stop_words_path="", embedding_size=100, skip_process=False) -> None:
         """Initialize search engine by vectorizing question corpus.
         Input questions should be used to fit the TF-IDF vectorizer.
         Vectorized question corpus should be used to find the top n most
@@ -19,6 +21,10 @@ class QuestionsSearchEngine:
         Args:
         questions: The sequence of raw questions from corpus.
         """
+        if questions is None:
+            questions = []
+        if skip_process:
+            return
         self._vectorizer = TfIdfVectorizer(stop_words_path=stop_words_path, embedding_size=embedding_size)
         question_list = []
         for document in questions:
@@ -66,6 +72,22 @@ class QuestionsSearchEngine:
             document: Document = self._stored_data[index]
             query_result.append((similarity_scores[0, index].round(decimals=4), document.text))
         return query_result
+
+    def save_stored_data(self, path):
+        """
+        Save processed data on disk
+        :param path: Path to directory where to store data
+        """
+        with open(path, 'wb') as output:
+            pickle.dump(self._stored_data, output, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(self._stored_data_vectors, output, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(self._vectorizer, output, pickle.HIGHEST_PROTOCOL)
+
+    def load_stored_data(self, path):
+        with open(path, 'rb') as input:
+            self._stored_data = pickle.load(input)
+            self._stored_data_vectors = pickle.load(input)
+            self._vectorizer = pickle.load(input)
 
     @staticmethod
     def load_questions(path):
