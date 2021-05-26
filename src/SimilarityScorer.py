@@ -34,23 +34,3 @@ class SimilarityScorer:
         cos_similarity = prod / norms
         cos_similarity = np.nan_to_num(cos_similarity)
         return cos_similarity
-
-
-if __name__ == "__main__":
-    q = np.array([[1, 1, 2], [2, 2, 1]])
-    # base = np.random.rand(3, 3)
-    bs = [[1, 1, 2], [2, 2, 1], [1, 1, 2]]
-    base = np.array(bs)
-
-    print(base[:, 0])
-    print(base[1, :])
-    print("q")
-    print(q)
-
-    print("Base:")
-    print(base)
-
-    sim = SimilarityScorer()
-    similarity = sim.cosine_similarity(query_vectors=q, corpus_vectors=base)
-    print(similarity)
-

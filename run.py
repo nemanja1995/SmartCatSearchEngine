@@ -1,5 +1,5 @@
 """
-
+ Run script for
 """
 
 import argparse
@@ -15,41 +15,52 @@ parser.add_argument('-d', '--corpus_path', default='data/questions.jsonl',
 parser.add_argument('-s', '--stop_words_path', default='data/stop_words_english.json',
                     help="Path to file with stopwords")
 parser.add_argument('-f', '--force_process', default=False,
-                    help="Force engine to process documents")
+                    help="Force engine to process corpus again")
 parser.add_argument('-dp', '--qse_data_path', default='cached/qse_data.pkl',
-                    help="Force engine to process documents")
+                    help="Path to cached data for question search engine")
 args = parser.parse_args()
 
 
 def main():
     print(args)
-    test_questions = [
-        "how to make sure a file's integrity in C#",
-        "c# index was out of the bounds of the array",
-        "MySQL how to query five tables in one SELECT",
-        "Add description attribute to enum and read this description in TypeScript"
-    ]
 
-    qse = None
     force_process = args.force_process
     qse_data_path = args.qse_data_path
+    stop_words_path = args.stop_words_path
+    vector_size = args.vector_size
+    corpus_path = args.corpus_path
+
+    loaded_from_cache = False
     if os.path.exists(qse_data_path) and not force_process:
         qse = QuestionsSearchEngine(skip_process=True)
         qse.load_stored_data(qse_data_path)
+        loaded_from_cache = True
 
     else:
-        documents = QuestionsSearchEngine.load_questions(path="data/questions.jsonl")
-        qse = QuestionsSearchEngine(questions=documents, stop_words_path="data/stop_words_english.json")
+        documents = QuestionsSearchEngine.load_questions(path=corpus_path)
+        qse = QuestionsSearchEngine(questions=documents,
+                                    stop_words_path=stop_words_path,
+                                    embedding_size=vector_size)
 
-    for t_question in test_questions:
-        print(t_question)
+    finished = False
+    while not finished:
+        print("> enter query: ")
+        question = input()
+        if type(question) != str:
+            print("> Wrong type entered")
+            continue
+
+        if question.lower() in ['quit', 'exit', 'end', 'done']:
+            finished = True
+            break
         print('-'*20)
-        r_query = qse.most_similar(query=t_question, n=5)
+        r_query = qse.most_similar(query=question, n=5)
         for rq in r_query:
             print(rq)
-        print('\n\n\n')
+        print('\n\n')
 
-    qse.save_stored_data(path=qse_data_path)
+    if not loaded_from_cache:
+        qse.save_stored_data(path=qse_data_path)
 
 
 if __name__ == "__main__":
