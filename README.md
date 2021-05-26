@@ -79,6 +79,12 @@ python web_server.py
 ##### Checks if service is up
 * Method : `GET`
 * Content-Type: `application/json`
+  
+* Send request example:
+```curl
+curl --location --request GET 'http://localhost:8081'
+```
+
 * Response JSON example
 ```json
 {
@@ -87,13 +93,19 @@ python web_server.py
 }
 ```
 
-```curl
-curl --location --request GET 'http://localhost:8081'
-```
-
 ##### Send query request
 * Method : `POST`
 * Content-Type: `application/json`
+  
+* Send request example:
+```curl
+curl --location --request POST 'http://localhost:8081' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+    "questions": ["how to make sure a file'\''s integrity in C#?"]
+}'
+```
+
 * Response JSON example
 ```json
 [
@@ -123,14 +135,6 @@ curl --location --request GET 'http://localhost:8081'
 		]
 	}
 ]
-```
-
-```curl
-curl --location --request POST 'http://localhost:8081' \
---header 'Content-Type: text/plain' \
---data-raw '{
-    "questions": ["how to make sure a file'\''s integrity in C#?"]
-}'
 ```
 
 ## Authors
