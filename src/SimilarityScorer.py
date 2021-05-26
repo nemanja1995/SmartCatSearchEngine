@@ -2,12 +2,12 @@
 Class that can measure similarity between vectors. It uses Cosine similarity.
 """
 import numpy as np
+
+# TODO: Fix problem with dividing by zero -> cos_similarity = prod / norms
 np.seterr(divide='ignore', invalid='ignore')
 
 
 class SimilarityScorer:
-    pass
-
     def cosine_similarity(self,
                           query_vectors: np.ndarray,
                           corpus_vectors: np.ndarray) -> np.ndarray:
@@ -30,6 +30,7 @@ class SimilarityScorer:
         prod = corpus_vectors.dot(query_vectors.T)
 
         norms = np.multiply(b_corpus_vectors_norm, b_query_vectors_norm)
+        # TODO: Fix dividing by zero problem
         cos_similarity = prod / norms
         cos_similarity = np.nan_to_num(cos_similarity)
         return cos_similarity
