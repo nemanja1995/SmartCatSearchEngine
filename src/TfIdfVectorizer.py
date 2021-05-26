@@ -32,8 +32,9 @@ class TfIdfVectorizer:
     def load_stop_words(self, path):
         if not os.path.exists(path):
             return
+
         with open(path, 'r') as fr:
-            stop_words = fr
+            stop_words = json.load(fr)
         self._stop_words = stop_words
 
     @staticmethod
