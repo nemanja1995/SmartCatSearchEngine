@@ -32,7 +32,8 @@ class TfIdfVectorizer:
     def load_stop_words(self, path):
         if not os.path.exists(path):
             return
-        stop_words = json.load(open(path, 'r'))
+        with open(path, 'r') as fr:
+            stop_words = fr
         self._stop_words = stop_words
 
     @staticmethod
@@ -43,6 +44,7 @@ class TfIdfVectorizer:
             row = row.replace('\n', '')
             sentence_json = json.loads(row)
             documents.append(sentence_json['question'])
+        fr.close()
         return documents
 
     def set_and_sort_word_dict(self, word_count_dict: dict):
@@ -95,7 +97,7 @@ class TfIdfVectorizer:
         sentences into vectors.
         """
         word_count_dict = {}
-        for doc in tqdm(questions, desc="Fitting vectorizer model"):
+        for doc in tqdm(questions, desc="Fitting vectorizer model", disable= not self.progress_bar):
             cl_doc = TfIdfVectorizer.trim_string(doc)
             words = list(set(cl_doc.split()))
             for word in words:
@@ -138,15 +140,14 @@ class TfIdfVectorizer:
         tf_idf_score, _ = self.tf_idf_info(word=word, document=document)
         return tf_idf_score
 
-    def transform_doc(self, questions) -> np.ndarray:
+    def transform_doc(self, question) -> np.ndarray:
         """
         Transform texts into numpy vectors with TF-IDF scores.
-        :param questions: The sequence of raw corpus questions.
         :return: Vectorized questions as numpy array of (N, D) shape where
                 N is number of questions in corpus, and D is vocabulary size
                 Used in a bag-of-words model.
         """
-        cl_sentence = TfIdfVectorizer.trim_string(questions)
+        cl_sentence = TfIdfVectorizer.trim_string(question)
         word_list = cl_sentence.split()
 
         # Clear multiple word appearance from word list
@@ -154,7 +155,7 @@ class TfIdfVectorizer:
         embedding = np.zeros(self._embedding_size, dtype=float)
 
         for word in words:
-            tf_idf_score, found_in_corpus = self.tf_idf_info(word=word, document=questions, word_list=word_list)
+            tf_idf_score, found_in_corpus = self.tf_idf_info(word=word, document=question, word_list=word_list)
             if found_in_corpus:
                 word_index = self._bag_word_vocabulary.get(word)[0]
                 embedding[word_index] = tf_idf_score
@@ -171,30 +172,10 @@ class TfIdfVectorizer:
         vectors = np.zeros(shape=(0, self._embedding_size), dtype=float)
         for num, document in tqdm(enumerate(questions), desc="Processing documents into vectors",
                                   total=len(questions), disable=not self.progress_bar):
-            vector = self.transform_doc(questions=document)
+            vector = self.transform_doc(question=document)
             vectors = np.vstack([vectors, vector])
         return vectors
 
     def save_bag_word_dict(self, path):
         json.dump(self._bag_word_vocabulary, open(path, 'w'), indent=4)
-
-
-if __name__ == '__main__':
-    path = 'data/questions.jsonl'
-    test_documents = [
-        "How to write Function in Python with list?",
-        "What is array in JavaScript?"
-    ]
-
-    documents = TfIdfVectorizer.load_questions(path=path)
-
-    vectorizer = TfIdfVectorizer(stop_words_path='data/stop_words_english.json', embedding_size=100)
-    vectorizer.fit(questions=documents)
-
-    vectorizer.save_bag_word_dict(path="data/bag_of_words.json")
-    result = vectorizer.transform(questions=test_documents)
-    for doc, vec in zip(test_documents, result):
-        print(doc)
-        print(vec)
-        print("-"*50)
 

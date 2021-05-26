@@ -67,7 +67,9 @@ class QuestionsSearchEngine:
         sim_scorer = SimilarityScorer()
 
         # Transform query question into vector
+        self._vectorizer.progress_bar = False
         query_vector = self._vectorizer.transform(questions=[query])
+        self._vectorizer.progress_bar = True
 
         # Search similar question with cosine similarity
         similarity_scores = sim_scorer.cosine_similarity(query_vectors=query_vector, corpus_vectors=self._stored_data_vectors)
@@ -105,7 +107,7 @@ class QuestionsSearchEngine:
         Loads cached data for Question Searched Engine
         :param path: Path to file where is cached data stored.
         """
-        if os.path.isfile(path):
+        if not os.path.isfile(path):
             raise FileNotFoundError("Given path to Question Search Engine cache does not exist.")
 
         with open(path, 'rb') as input:
@@ -127,6 +129,7 @@ class QuestionsSearchEngine:
             tags = sentence_json.get('tags', '')
             doc = Document(text=question, doc_id=doc_id, tags=tags)
             documents.append(doc)
+        fr.close()
         return documents
 
 
@@ -147,5 +150,4 @@ if __name__ == "__main__":
     #     for rq in r_query:
     #         print(rq)
     #     print('\n\n\n')
-
     pass

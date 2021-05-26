@@ -29,11 +29,12 @@ class MyServer(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
-        self.wfile.write(bytes("<html><head><title>https://Smart Cat Search</title></head>", "utf-8"))
-        self.wfile.write(bytes("<p>Request: %s</p>" % self.path, "utf-8"))
-        self.wfile.write(bytes("<body>", "utf-8"))
-        self.wfile.write(bytes("<p>This is an example web server for testing smart cat search.</p>", "utf-8"))
-        self.wfile.write(bytes("</body></html>", "utf-8"))
+        ok_response = {
+            "message": "ping!",
+            "status": "OK"
+        }
+        data = json.dumps(ok_response)
+        self.wfile.write(data.encode('utf-8'))
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
