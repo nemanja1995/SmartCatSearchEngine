@@ -1,5 +1,5 @@
 # Search Engine
-This is project created as part of technical interview for Smart Cat.
+This is project created as part of technical interview for Smart Cat. Semantic similarity search based on TF-IDF and bag of words algorithms.
 
 ## Requirements
 
